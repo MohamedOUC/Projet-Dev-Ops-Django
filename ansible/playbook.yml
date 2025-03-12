@@ -1,0 +1,66 @@
+- name: Deploiement de Django avec Docker
+  hosts: all
+  become: yes
+  tasks:
+
+    # 0. Pre-requis (création du groupe docker)
+    - name: Verifier et creer le groupe docker si nécessaire
+      become: yes
+      group:
+        name: docker
+        state: present
+
+    - name: Ajouter utilisateur distant au groupe
+      become: yes
+      user:
+        name: "distant"
+        groups: docker
+        append: yes
+
+    - name: Redemarrer Docker pour appliquer les changements
+      become: yes
+      systemd:
+        name: docker
+        state: restarted
+
+    # 1. Installer Docker
+    - name: Installer Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    # 2. Créer le répertoire de l'application
+    - name: Creer le répertoire de application sur le serveur
+      file:
+        path: /home/distant/app_django
+        state: directory
+
+    # 3. Copier tous les fichiers necessaires (Dockerfile, requirements.txt) sur le serveur distant
+    - name: Copier le Dockerfile et les fichiers necessaires sur le serveur distant
+      copy:
+        src: /home/Projet_DevOps_Django/django_project
+        dest: /home/distant/app_django/docker
+        owner: distant
+        group: distant
+        mode: '0755'
+        remote_src: no
+
+    # 4. Vérification de l'existance du répertoire 
+    - name: Vérifier que le répertoire docker existe
+      file:
+        path: /home/distant/app_django/docker
+        state: directory
+        mode: '0755'
+
+    # 5. Construire image Docker à partir du Dockerfile
+    - name: Constuire image Docker
+      command: docker build -t mon_django_app /home/distant/app_django/docker/django_project
+      args:
+        chdir: /home/distant/app_django/docker/django_project
+
+    # 6. Lancer le conteneur Docker
+    - name: Lancer le conteneur Docker
+      command: docker run -d -p 5000:5000 mon_django_app
+      args:
+        chdir: /home/distant/app_django/docker/django_project

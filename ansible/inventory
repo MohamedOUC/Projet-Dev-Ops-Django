@@ -1,0 +1,2 @@
+[distant_machines]
+distant ansible_host=10.0.101.169 ansible_user=distant ansible_ssh_private_key_file=/home/yams/.ssh/id_rsa
