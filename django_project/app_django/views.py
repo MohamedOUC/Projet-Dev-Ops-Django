@@ -1,6 +1,7 @@
-from django.http import HttpResponse
+from datetime import datetime
+from django.shortcuts import render
 
 # Create your views here.
 
 def home(request):
-	return HttpResponse("Projet DevOps en cours de création")
+	return render(request, "index.html", context={"date": datetime.today()})

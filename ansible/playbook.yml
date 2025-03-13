@@ -1,9 +1,31 @@
-- name: Deploiement de Django avec Docker
+- name: Deploiement de Django avec Docker et PostgreSQL
   hosts: all
   become: yes
   tasks:
 
-    # 0. Pre-requis (création du groupe docker)
+
+    # 0. Pre-requis
+
+      # 0.1 Mise à jour des paquets
+    - name: Mettre a jour les paquets et cache APT
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    # 0.2 Installer les pré-requis : Python3 et pip3 + vérification installation
+    - name: Installer Python3 et pip3
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - libpq-dev
+          - gcc
+          - python3-dev
+        state: present
+        update_cache: yes
+      become: yes
+
+      # 0.3 Créer et ajouter l'utilisateur au groupe docker
     - name: Verifier et creer le groupe docker si nécessaire
       become: yes
       group:
@@ -53,14 +75,26 @@
         state: directory
         mode: '0755'
 
-    # 5. Construire image Docker à partir du Dockerfile
+    # 5. Installer Django et les dépendances depuis requirements.txt
+    - name: Installer Django et les dépendances nécessaires avec pip
+      pip:
+        requirements: /home/distant/app_django/docker/django_project/requirements.txt
+        executable: pip3
+
+    # 6. Construire image Docker à partir du Dockerfile
     - name: Constuire image Docker
       command: docker build -t mon_django_app /home/distant/app_django/docker/django_project
       args:
         chdir: /home/distant/app_django/docker/django_project
 
-    # 6. Lancer le conteneur Docker
+    # 7. Collecter les fichiers statiques de Django
+    - name: Collecter les fichiers statiques
+      command: python3 /home/distant/app_django/docker/django_project/manage.py collectstatic --noinput
+      args:
+        chdir: /home/distant/app_django/docker/django_project
+
+    # 8. Lancer le conteneur Docker
     - name: Lancer le conteneur Docker
-      command: docker run -d -p 5000:5000 mon_django_app
+      command: docker run -d -p 8000:8000 mon_django_app
       args:
         chdir: /home/distant/app_django/docker/django_project

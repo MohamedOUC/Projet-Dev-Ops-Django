@@ -15,6 +15,9 @@ COPY . /app
 # Exposer le port Django
 EXPOSE 8000
 
+# Configurer Nginx pour servir les fichiers statiques correctement
+RUN python manage.py collectstatic --noinput
+
 # Lancer Gunicorn pour exécuter Django
 CMD ["gunicorn", "--chdir", "/app", "django_project.wsgi:application", "--bind", "0.0.0.0:8000"]
 

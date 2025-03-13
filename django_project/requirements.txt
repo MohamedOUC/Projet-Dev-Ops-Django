@@ -1,3 +1,4 @@
 django
 gunicorn
 django-extensions
+psycopg2
